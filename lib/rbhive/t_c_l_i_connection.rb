@@ -428,7 +428,29 @@ module RBHive
     def raise_error_if_failed!(result)
       return if result.status.statusCode == 0
       error_message = result.status.errorMessage || 'Execution failed!'
-      raise error_message
+      error_code = result.status.errorCode || "-1"
+      sql_state = result.status.sqlState || "unknown SQL_STATE"
+      raise RBHive::HiveServerException.new(message: error_message, errorCode: error_code, SQLState: sql_state)
     end
+  end
+
+  class HiveServerException < ::Thrift::Exception
+    include ::Thrift::Struct, ::Thrift::Struct_Union
+    MESSAGE = 1
+    ERRORCODE = 2
+    SQLSTATE = 3
+
+    FIELDS = {
+      MESSAGE => {:type => ::Thrift::Types::STRING, :name => 'message'},
+      ERRORCODE => {:type => ::Thrift::Types::I32, :name => 'errorCode'},
+      SQLSTATE => {:type => ::Thrift::Types::STRING, :name => 'SQLState'}
+    }
+
+    def struct_fields; FIELDS; end
+
+    def validate
+    end
+
+    ::Thrift::Struct.generate_accessors self
   end
 end
